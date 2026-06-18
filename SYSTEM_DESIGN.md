@@ -200,13 +200,13 @@ Staged to the milestones — **no store is needed to start.**
 
 ## 9. Milestones & Checkpoints
 
-### M0 — Project setup
-- [ ] Initialize git + push to a private GitHub repo
-- [ ] Create Android Studio project (Kotlin)
-- [ ] Decide min SDK / target SDK
-- [ ] Set up package structure
-- [ ] Add base dependencies (Room, Coroutines, Compose, Hilt)
-- [ ] GitHub Actions skeleton: build + unit tests + lint on push
+### M0 — Project setup ✅ (CI-verified 2026-06-18)
+- [x] Initialize git + push to a private GitHub repo → `github.com/Blackrevan1/buddylimit`
+- [x] Create Android project (Kotlin) — scaffolded by hand, verified by CI
+- [x] Decide min SDK / target SDK → **min 26 / target 35**
+- [x] Set up package structure → `com.buddylimit.app`
+- [x] Add base dependencies (Room, Coroutines, Compose, Hilt)
+- [x] GitHub Actions skeleton: build + unit tests + lint on push → **passing (5m18s)**
 
 ### M1 — Local blocker (the "exists" version)
 **App selection & budgets**
@@ -303,7 +303,7 @@ Staged to the milestones — **no store is needed to start.**
 
 - [ ] App name
 - [x] ~~Jetpack Compose vs. XML views~~ → **Compose**
-- [ ] Min / target SDK (leaning min 26)
+- [x] ~~Min / target SDK~~ → **min 26 / target & compile 35**
 - [x] ~~Backend (Firebase vs. alternative)~~ → **Firebase** (D8)
 
 ---
@@ -318,3 +318,11 @@ Staged to the milestones — **no store is needed to start.**
   GitHub Actions CI; Play App Signing). Enriched §8 (Compose, Hilt, foreground service
   + WorkManager watchdog, Cloud Functions). Resolved §12 Compose + backend.
   **Next: M0** — git init + GitHub repo + Android project scaffold.
+- **2026-06-18** — **M0 complete & CI-verified.** Scaffolded native Android project
+  (Kotlin, Compose, Hilt, Room, Coroutines; AGP 8.7.2 / Kotlin 2.0.21 / Gradle 8.10.2;
+  min SDK 26 / target 35; package `com.buddylimit.app`). Repo (private):
+  github.com/Blackrevan1/buddylimit. GitHub Actions CI (assembleDebug + unit tests +
+  lint) **passed in 5m18s** — first real build verification (this env has no Android
+  SDK, so CI is the build oracle). Resolved §12 min SDK. **Next: M1** — local blocker;
+  good starting point is app-selection + per-app budget UI, then the UsageStats
+  foreground service.
