@@ -1,11 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- See which apps the user can launch, for the app picker (Android 11+ package
+         visibility). Broader visibility via QUERY_ALL_PACKAGES will come with the
+         monitoring layer in a later M1 phase, if needed. -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent>
+    </queries>
+
     <!--
-        M1 will add the runtime/special permissions here:
-        PACKAGE_USAGE_STATS, SYSTEM_ALERT_WINDOW, FOREGROUND_SERVICE (+ specialUse type),
-        POST_NOTIFICATIONS, RECEIVE_BOOT_COMPLETED, REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
-        QUERY_ALL_PACKAGES. Kept minimal for the M0 scaffold.
+        Later M1 phases will add: PACKAGE_USAGE_STATS, SYSTEM_ALERT_WINDOW,
+        FOREGROUND_SERVICE (+ specialUse type), POST_NOTIFICATIONS,
+        RECEIVE_BOOT_COMPLETED, REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, QUERY_ALL_PACKAGES.
     -->
 
     <application
