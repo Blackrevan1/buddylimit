@@ -1,6 +1,6 @@
 # Social Media Limiter — System Design & Progress
 
-> **Status:** M0 complete (scaffold, CI-verified) · **M1 (local blocker) is next**
+> **Status:** M1 Phase 1 code done (CI-verified) · **pending manual device run, then Phase 2**
 > **Last updated:** 2026-06-18
 > **Platform:** Android-first (native Kotlin)
 > **Working name:** BuddyLimit _(placeholder, renamable)_
@@ -223,12 +223,12 @@ Staged to the milestones — **no store is needed to start.**
 ### M1 — Local blocker (the "exists" version)
 > Each phase ends with a ✔ **verify gate** — don't start the next phase until it passes.
 
-**Phase 1 · App selection & budgets**
-- [ ] List installed apps (`PackageManager` + `QUERY_ALL_PACKAGES`)
-- [ ] UI to pick monitored apps
-- [ ] UI to set per-app daily minutes
-- [ ] Persist budgets (Room)
-- [ ] ✔ **Verify:** CI green; run in Studio — selections + budgets survive an app restart
+**Phase 1 · App selection & budgets** — _code done, CI-verified 2026-06-18 (commit aada1e2)_
+- [x] List installed apps (`PackageManager` launcher `<queries>` — QUERY_ALL_PACKAGES deferred)
+- [x] UI to pick monitored apps
+- [x] UI to set per-app daily minutes (stepper, 5-min steps, default 30)
+- [x] Persist budgets (Room, behind `AppRepository` interface)
+- [ ] ✔ **Verify:** CI green ✅ — **pending manual device run** (selections + budgets survive an app restart)
 
 **Phase 2 · Usage tracking**
 - [ ] Request + verify Usage Access permission
@@ -350,3 +350,9 @@ Staged to the milestones — **no store is needed to start.**
   tests pass (+ manual device run for permissions/service/overlay), and it's committed
   with the tracker updated. Codified as the **Definition of Done** in §9 and added
   per-phase ✔ verify gates to M1. Also set CI to skip docs-only changes (`paths-ignore`).
+- **2026-06-18** — **M1 Phase 1 code complete & CI-verified** (build + unit test + lint
+  green, 4m5s, commit aada1e2). Room `MonitoredApp` + DAO behind an `AppRepository`
+  interface; Hilt DI; `AppListViewModel` merges installed apps (launcher `<queries>`)
+  with the monitored set; Compose picker with monitor toggle + per-app minute stepper;
+  unit test for the pure merge. **Pending:** manual device run to confirm persistence
+  across restart before starting Phase 2.
