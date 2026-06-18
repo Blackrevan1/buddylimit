@@ -1,9 +1,10 @@
 # Social Media Limiter — System Design & Progress
 
-> **Status:** Design phase (pre-code)
+> **Status:** M0 complete (scaffold, CI-verified) · **M1 (local blocker) is next**
 > **Last updated:** 2026-06-18
 > **Platform:** Android-first (native Kotlin)
-> **Working name:** _TBD_
+> **Working name:** BuddyLimit _(placeholder, renamable)_
+> **Repo (private):** github.com/Blackrevan1/buddylimit · local root `/home/krish/Desktop/ideas`
 
 This is a living document. It holds the vision, the architecture, every locked
 design decision (with rationale), and a checkpoint-based progress tracker.
@@ -200,6 +201,17 @@ Staged to the milestones — **no store is needed to start.**
 
 ## 9. Milestones & Checkpoints
 
+> **Definition of Done (every checkpoint):** a checkpoint is not "done" until it is
+> *verified working*, not just written. Before checking a box and moving on:
+> 1. It **builds** — CI green, or a clean local Android Studio build.
+> 2. Relevant **tests pass** — unit tests, plus a **manual run on a device/emulator**
+>    for anything touching permissions, the foreground service, or the overlay.
+> 3. It's **committed** and this tracker is updated.
+>
+> **How we verify here:** this dev environment has **no Android SDK/Gradle**, so the
+> build oracle is **GitHub Actions CI** (push → build + test + lint) and/or a manual
+> run in **Android Studio**. Never advance to the next step on unverified code.
+
 ### M0 — Project setup ✅ (CI-verified 2026-06-18)
 - [x] Initialize git + push to a private GitHub repo → `github.com/Blackrevan1/buddylimit`
 - [x] Create Android project (Kotlin) — scaffolded by hand, verified by CI
@@ -209,36 +221,43 @@ Staged to the milestones — **no store is needed to start.**
 - [x] GitHub Actions skeleton: build + unit tests + lint on push → **passing (5m18s)**
 
 ### M1 — Local blocker (the "exists" version)
-**App selection & budgets**
+> Each phase ends with a ✔ **verify gate** — don't start the next phase until it passes.
+
+**Phase 1 · App selection & budgets**
 - [ ] List installed apps (`PackageManager` + `QUERY_ALL_PACKAGES`)
 - [ ] UI to pick monitored apps
 - [ ] UI to set per-app daily minutes
 - [ ] Persist budgets (Room)
+- [ ] ✔ **Verify:** CI green; run in Studio — selections + budgets survive an app restart
 
-**Usage tracking**
+**Phase 2 · Usage tracking**
 - [ ] Request + verify Usage Access permission
 - [ ] Foreground service skeleton + persistent notification
 - [ ] Poll `UsageStatsManager.queryEvents` for foreground app
 - [ ] Accumulate per-app usage for current day-window
 - [ ] Persist usage counters
+- [ ] ✔ **Verify:** on a device, tracked time for a real app matches reality (±poll interval)
 
-**Reset logic**
+**Phase 3 · Reset logic**
 - [ ] Implement 4am day-window anchor
 - [ ] Zero counters on crossing reset
 - [ ] Configurable reset time setting
+- [ ] ✔ **Verify:** counters zero at the boundary (test with a near-term reset time)
 
-**Blocking**
+**Phase 4 · Blocking**
 - [ ] Request overlay permission
 - [ ] Block decision on foreground-enter (used ≥ budget)
 - [ ] Full-screen overlay with live countdown
 - [ ] Send user to Home on block
+- [ ] ✔ **Verify:** exceeding budget on a real app shows the overlay + countdown on re-entry
 
-**Reliability**
+**Phase 5 · Reliability**
 - [ ] Battery-optimization exemption prompt
 - [ ] `BOOT_COMPLETED` receiver to restart service
 - [ ] Handle `POST_NOTIFICATIONS` (Android 13+)
+- [ ] ✔ **Verify:** blocking still works after a reboot and after the screen's been off a while
 
-**Validate**
+**Phase 6 · Validate end-to-end**
 - [ ] Dogfood on owner's phone for several days
 
 ### M2 — Buddy layer
@@ -326,3 +345,8 @@ Staged to the milestones — **no store is needed to start.**
   SDK, so CI is the build oracle). Resolved §12 min SDK. **Next: M1** — local blocker;
   good starting point is app-selection + per-app budget UI, then the UsageStats
   foreground service.
+- **2026-06-18** — Adopted a **verify-before-proceed** working process (user request):
+  no checkpoint is "done" until it builds (CI green / clean Studio build), relevant
+  tests pass (+ manual device run for permissions/service/overlay), and it's committed
+  with the tracker updated. Codified as the **Definition of Done** in §9 and added
+  per-phase ✔ verify gates to M1. Also set CI to skip docs-only changes (`paths-ignore`).
