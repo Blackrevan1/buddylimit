@@ -1,0 +1,27 @@
+# Gradle
+.gradle/
+build/
+/app/build/
+/captures/
+.kotlin/
+
+# Android Studio / IntelliJ
+*.iml
+.idea/
+*.hprof
+
+# Local config (machine-specific — never commit)
+local.properties
+
+# Signing / secrets
+*.jks
+*.keystore
+google-services.json
+key.properties
+
+# Build outputs
+*.apk
+*.aab
+
+# OS
+.DS_Store

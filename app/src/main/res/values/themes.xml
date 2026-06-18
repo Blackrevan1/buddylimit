@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Window-level theme used before Compose draws. App colors come from the
+         Compose Material3 theme (ui/theme/Theme.kt). -->
+    <style name="Theme.BuddyLimit" parent="android:Theme.Material.Light.NoActionBar" />
+</resources>
