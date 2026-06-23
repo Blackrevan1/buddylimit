@@ -1,6 +1,6 @@
 # Social Media Limiter — System Design & Progress
 
-> **Status:** M1 Phase 2 code done (CI-verified) · **pending device run, then Phase 3**
+> **Status:** M1 Phase 2 ✅ device-verified · **Phase 3 (reset logic) next**
 > **Last updated:** 2026-06-23
 > **Platform:** Android-first (native Kotlin)
 > **Working name:** BuddyLimit _(placeholder, renamable)_
@@ -230,13 +230,13 @@ Staged to the milestones — **no store is needed to start.**
 - [x] Persist budgets (Room, behind `AppRepository` interface)
 - [x] ✔ **Verify:** CI green ✅ + **device run passed 2026-06-23** (selections + budgets survived an app restart)
 
-**Phase 2 · Usage tracking** — _code done, CI-verified 2026-06-23 (commit 171ea9e)_
+**Phase 2 · Usage tracking** ✅ _complete_ — _CI-verified 2026-06-23 (commit 171ea9e); device-verified 2026-06-23_
 - [x] Request + verify Usage Access permission (`UsageAccess`: AppOps check + Settings intent; UI grant card)
 - [x] Foreground service skeleton + persistent notification (`UsageMonitorService`, `specialUse` FGS type)
 - [x] Poll `UsageStatsManager.queryEvents` for foreground app (~1s)
 - [x] Accumulate per-app usage for current day-window (`DayWindow` 4am anchor; Doze-gap cap)
 - [x] Persist usage counters (Room v2 `usage_records` behind `UsageRepository`; migrated, not destructive)
-- [ ] ✔ **Verify:** CI green ✅ — **pending device run** (tracked time for a real app matches reality, ±poll interval)
+- [x] ✔ **Verify:** CI green ✅ + **device run passed 2026-06-23** (tracked time climbed and matched real usage, ±poll interval)
 
 **Phase 3 · Reset logic**
 - [ ] Implement 4am day-window anchor
@@ -377,3 +377,10 @@ Staged to the milestones — **no store is needed to start.**
   verification surface. Manifest gained PACKAGE_USAGE_STATS, FOREGROUND_SERVICE(+SPECIAL_USE),
   POST_NOTIFICATIONS + the service declaration. **Pending:** device run to confirm tracked
   time matches reality (±poll) before Phase 3 (reset logic).
+- **2026-06-23** — **M1 Phase 2 ✅ device-verified — gate closed.** On a real phone the
+  per-app "used" counter climbed while a monitored app was foreground and matched actual
+  usage within the poll/flush tolerance. (Confirmed expectation: nothing *blocks* yet —
+  the app only measures time; the block decision + overlay are Phase 4.) Phase 2 done per
+  the Definition of Done. **Next: Phase 3 — reset logic** (configurable reset hour via
+  DataStore, make the day-window reactive so counters present fresh at the boundary, zero
+  on crossing the next reset).
