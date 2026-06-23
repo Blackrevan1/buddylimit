@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <!-- See which apps the user can launch, for the app picker (Android 11+ package
          visibility). Broader visibility via QUERY_ALL_PACKAGES will come with the
@@ -11,10 +12,20 @@
         </intent>
     </queries>
 
+    <!-- Phase 2 (usage tracking). Special access: PACKAGE_USAGE_STATS is granted by the
+         user in Settings → Usage Access, not at runtime (lint flags it as a system
+         permission; we knowingly declare it). -->
+    <uses-permission
+        android:name="android.permission.PACKAGE_USAGE_STATS"
+        tools:ignore="ProtectedPermissions" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
     <!--
-        Later M1 phases will add: PACKAGE_USAGE_STATS, SYSTEM_ALERT_WINDOW,
-        FOREGROUND_SERVICE (+ specialUse type), POST_NOTIFICATIONS,
-        RECEIVE_BOOT_COMPLETED, REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, QUERY_ALL_PACKAGES.
+        Later M1 phases will add: SYSTEM_ALERT_WINDOW (overlay, Phase 4),
+        RECEIVE_BOOT_COMPLETED + REQUEST_IGNORE_BATTERY_OPTIMIZATIONS (Phase 5),
+        QUERY_ALL_PACKAGES (if broader visibility is needed).
     -->
 
     <application
@@ -36,5 +47,16 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <service
+            android:name=".monitor.UsageMonitorService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <!-- Android 14+ requires a subtype + Play justification for specialUse FGS.
+                 Fine for sideload/dogfood now; the Play declaration is tracked for release. -->
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="app_usage_time_limiter" />
+        </service>
     </application>
 </manifest>

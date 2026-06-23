@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.buddylimit.app.data.AppRepository
 import com.buddylimit.app.data.InstalledApp
+import com.buddylimit.app.data.UsageRepository
+import com.buddylimit.app.monitor.DayWindow
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -11,6 +13,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.time.ZoneId
 import javax.inject.Inject
 
 data class AppListUiState(
@@ -20,17 +23,26 @@ data class AppListUiState(
 
 @HiltViewModel
 class AppListViewModel @Inject constructor(
-    private val repository: AppRepository
+    private val repository: AppRepository,
+    usageRepository: UsageRepository
 ) : ViewModel() {
 
     private val installedApps = MutableStateFlow<List<InstalledApp>>(emptyList())
     private val loaded = MutableStateFlow(false)
 
+    // Window key for "today". Phase 3 makes this reactive to the configurable reset.
+    private val dayKey = DayWindow.dayKey(System.currentTimeMillis(), ZoneId.systemDefault())
+
     val uiState: StateFlow<AppListUiState> =
-        combine(installedApps, loaded, repository.observeMonitoredApps()) { installed, loaded, monitored ->
+        combine(
+            installedApps,
+            loaded,
+            repository.observeMonitoredApps(),
+            usageRepository.observeUsageForDay(dayKey)
+        ) { installed, loaded, monitored, usage ->
             AppListUiState(
                 loading = !loaded,
-                items = mergeAppList(installed, monitored)
+                items = mergeAppList(installed, monitored, usage)
             )
         }.stateIn(
             scope = viewModelScope,

@@ -42,4 +42,15 @@ class AppListMapperTest {
         assertEquals(3, items.size)
         assertTrue(items.none { it.packageName == "com.gone" })
     }
+
+    @Test
+    fun usageSeconds_areMergedOntoItems() {
+        val monitored = listOf(MonitoredApp("com.insta", "Instagram", 30))
+        val usage = mapOf("com.insta" to 125L)
+        val items = mergeAppList(installed, monitored, usage).associateBy { it.packageName }
+
+        assertEquals(125L, items.getValue("com.insta").usedSeconds)
+        // Apps with no recorded usage default to 0.
+        assertEquals(0L, items.getValue("com.maps").usedSeconds)
+    }
 }

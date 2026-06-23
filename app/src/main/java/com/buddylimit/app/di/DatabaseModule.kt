@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import com.buddylimit.app.data.local.AppDatabase
 import com.buddylimit.app.data.local.MonitoredAppDao
+import com.buddylimit.app.data.local.UsageDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -18,8 +19,13 @@ object DatabaseModule {
     @Provides
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): AppDatabase =
-        Room.databaseBuilder(context, AppDatabase::class.java, "buddylimit.db").build()
+        Room.databaseBuilder(context, AppDatabase::class.java, "buddylimit.db")
+            .addMigrations(AppDatabase.MIGRATION_1_2)
+            .build()
 
     @Provides
     fun provideMonitoredAppDao(db: AppDatabase): MonitoredAppDao = db.monitoredAppDao()
+
+    @Provides
+    fun provideUsageDao(db: AppDatabase): UsageDao = db.usageDao()
 }

@@ -2,6 +2,8 @@ package com.buddylimit.app.di
 
 import com.buddylimit.app.data.AppRepository
 import com.buddylimit.app.data.AppRepositoryImpl
+import com.buddylimit.app.data.UsageRepository
+import com.buddylimit.app.data.UsageRepositoryImpl
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -15,4 +17,8 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindAppRepository(impl: AppRepositoryImpl): AppRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindUsageRepository(impl: UsageRepositoryImpl): UsageRepository
 }
