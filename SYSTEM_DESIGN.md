@@ -1,7 +1,7 @@
 # Social Media Limiter — System Design & Progress
 
-> **Status:** M1 Phase 1 code done (CI-verified) · **pending manual device run, then Phase 2**
-> **Last updated:** 2026-06-18
+> **Status:** M1 Phase 1 ✅ device-verified · **Phase 2 (usage tracking) in progress**
+> **Last updated:** 2026-06-23
 > **Platform:** Android-first (native Kotlin)
 > **Working name:** BuddyLimit _(placeholder, renamable)_
 > **Repo (private):** github.com/Blackrevan1/buddylimit · local root `/home/krish/Desktop/ideas`
@@ -223,12 +223,12 @@ Staged to the milestones — **no store is needed to start.**
 ### M1 — Local blocker (the "exists" version)
 > Each phase ends with a ✔ **verify gate** — don't start the next phase until it passes.
 
-**Phase 1 · App selection & budgets** — _code done, CI-verified 2026-06-18 (commit aada1e2)_
+**Phase 1 · App selection & budgets** ✅ _complete_ — _CI-verified 2026-06-18 (commit aada1e2); device-verified 2026-06-23_
 - [x] List installed apps (`PackageManager` launcher `<queries>` — QUERY_ALL_PACKAGES deferred)
 - [x] UI to pick monitored apps
 - [x] UI to set per-app daily minutes (stepper, 5-min steps, default 30)
 - [x] Persist budgets (Room, behind `AppRepository` interface)
-- [ ] ✔ **Verify:** CI green ✅ — **pending manual device run** (selections + budgets survive an app restart)
+- [x] ✔ **Verify:** CI green ✅ + **device run passed 2026-06-23** (selections + budgets survived an app restart)
 
 **Phase 2 · Usage tracking**
 - [ ] Request + verify Usage Access permission
@@ -356,3 +356,11 @@ Staged to the milestones — **no store is needed to start.**
   with the monitored set; Compose picker with monitor toggle + per-app minute stepper;
   unit test for the pure merge. **Pending:** manual device run to confirm persistence
   across restart before starting Phase 2.
+- **2026-06-23** — **M1 Phase 1 ✅ device-verified — gate closed.** Added a CI step to
+  upload the debug APK as the `app-debug` artifact; sideloaded it onto the owner's real
+  Android phone (no local SDK needed — this dev box has none, but CI is the build oracle).
+  Manual test passed: monitored-app selections + non-default per-app budgets (e.g. 15/45)
+  survived a full app kill + relaunch. Phase 1 is now done per the Definition of Done.
+  **Next: Phase 2 — usage tracking** (Usage Access permission → foreground service +
+  persistent notification → poll `UsageStatsManager.queryEvents` → accumulate per-app
+  usage for the day-window → persist counters).
