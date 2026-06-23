@@ -1,6 +1,6 @@
 # Social Media Limiter — System Design & Progress
 
-> **Status:** M1 Phase 3 code done (CI-verified) · **pending device run, then Phase 4**
+> **Status:** M1 Phases 3 & 4 code done (CI-verified) · **pending one batched device run, then Phase 5**
 > **Last updated:** 2026-06-24
 > **Platform:** Android-first (native Kotlin)
 > **Working name:** BuddyLimit _(placeholder, renamable)_
@@ -244,12 +244,12 @@ Staged to the milestones — **no store is needed to start.**
 - [x] Configurable reset time setting (`SettingsRepository` via DataStore, default 4; "Daily reset at HH:00" stepper)
 - [ ] ✔ **Verify:** CI green ✅ — **pending device run** (counters present fresh at the boundary; test with a near-term reset time / device clock)
 
-**Phase 4 · Blocking**
-- [ ] Request overlay permission
-- [ ] Block decision on foreground-enter (used ≥ budget)
-- [ ] Full-screen overlay with live countdown
-- [ ] Send user to Home on block
-- [ ] ✔ **Verify:** exceeding budget on a real app shows the overlay + countdown on re-entry
+**Phase 4 · Blocking** — _code done, CI-verified 2026-06-24 (commit 63b0cfa)_
+- [x] Request overlay permission (`OverlayPermission`: `canDrawOverlays` + Settings intent; UI grant card)
+- [x] Block decision on foreground-enter (used ≥ budget; re-entry denial — in-progress sessions not interrupted)
+- [x] Full-screen overlay with live countdown (`BlockOverlay`, `TYPE_APPLICATION_OVERLAY`, "Back in Hh Mm")
+- [x] Send user to Home on block (`CATEGORY_HOME`; overlay perm also exempts background activity start)
+- [ ] ✔ **Verify:** CI green ✅ — **pending device run** (exceeding a budget shows overlay + countdown on re-entry, bounces Home)
 
 **Phase 5 · Reliability**
 - [ ] Battery-optimization exemption prompt
@@ -395,3 +395,16 @@ Staged to the milestones — **no store is needed to start.**
   Phase 2. Added the `androidx.datastore:datastore-preferences` dependency. **Pending:** device
   run to confirm counters present fresh at the boundary (set a near-term reset time / nudge the
   device clock) before Phase 4 (blocking).
+- **2026-06-24** — **M1 Phase 4 code complete & CI-verified** (build + unit tests + lint green,
+  2m46s, commit 63b0cfa). The blocking core: `OverlayPermission` (canDrawOverlays + Settings
+  intent), `SYSTEM_ALERT_WINDOW` declared. `BlockOverlay` draws a full-screen
+  `TYPE_APPLICATION_OVERLAY` (plain Views, no Activity) — "<App> is done" + live "Back in Hh Mm"
+  countdown to the next reset + a dismiss button, all main-thread marshalled. `UsageMonitorService`
+  now tracks budgets+labels and, on a **foreground-ENTER** into a monitored app whose used
+  (persisted + pending) ≥ budget, throws the overlay and sends the user Home — **re-entry denial**,
+  so an in-progress session is never interrupted (the known §10 "never close it" loophole stands).
+  Blocking is gated on the overlay permission (which also exempts background activity starts so
+  the Home intent works). UI gained an overlay-permission grant prompt. User chose to **proceed
+  through Phases 3 + 4 and batch one device run** for both. **Pending:** that batched device run —
+  (a) reset boundary presents counters fresh, (b) exceeding a budget shows the overlay + countdown
+  on re-entry and bounces Home — before Phase 5 (reliability: boot restart, battery exemption).
