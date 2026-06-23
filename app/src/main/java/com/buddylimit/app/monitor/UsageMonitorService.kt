@@ -15,6 +15,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.buddylimit.app.R
 import com.buddylimit.app.data.AppRepository
+import com.buddylimit.app.data.SettingsRepository
 import com.buddylimit.app.data.UsageRepository
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
@@ -39,11 +40,13 @@ class UsageMonitorService : Service() {
 
     @Inject lateinit var appRepository: AppRepository
     @Inject lateinit var usageRepository: UsageRepository
+    @Inject lateinit var settingsRepository: SettingsRepository
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val zone: ZoneId = ZoneId.systemDefault()
 
     @Volatile private var monitoredPackages: Set<String> = emptySet()
+    @Volatile private var resetHour: Int = DayWindow.DEFAULT_RESET_HOUR
 
     override fun onCreate() {
         super.onCreate()
@@ -68,6 +71,9 @@ class UsageMonitorService : Service() {
             appRepository.observeMonitoredApps().collect { apps ->
                 monitoredPackages = apps.map { it.packageName }.toSet()
             }
+        }
+        scope.launch {
+            settingsRepository.resetHour.collect { resetHour = it }
         }
     }
 
@@ -110,7 +116,7 @@ class UsageMonitorService : Service() {
 
     /** Persist whole accumulated seconds, keeping sub-second remainders pending. */
     private suspend fun flush(pendingMs: MutableMap<String, Long>, nowWall: Long) {
-        val dayKey = DayWindow.dayKey(nowWall, zone)
+        val dayKey = DayWindow.dayKey(nowWall, zone, resetHour)
         for (entry in pendingMs.entries) {
             val seconds = entry.value / 1000L
             if (seconds > 0L) {

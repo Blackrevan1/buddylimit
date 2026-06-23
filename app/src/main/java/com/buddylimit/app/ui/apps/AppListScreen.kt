@@ -110,12 +110,14 @@ fun AppListScreen(
                     MonitorControls(
                         usageGranted = usageGranted,
                         monitoring = monitoring,
+                        resetHour = state.resetHour,
                         onGrantUsageAccess = { context.startActivity(UsageAccess.settingsIntent()) },
                         onStart = { startMonitoring() },
                         onStop = {
                             UsageMonitorService.stop(context)
                             monitoring = false
-                        }
+                        },
+                        onResetHourChange = { viewModel.onResetHourChange(it) }
                     )
                     HorizontalDivider()
                 }
@@ -136,9 +138,11 @@ fun AppListScreen(
 private fun MonitorControls(
     usageGranted: Boolean,
     monitoring: Boolean,
+    resetHour: Int,
     onGrantUsageAccess: () -> Unit,
     onStart: () -> Unit,
-    onStop: () -> Unit
+    onStop: () -> Unit,
+    onResetHourChange: (Int) -> Unit
 ) {
     Card(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
         Column(
@@ -162,6 +166,27 @@ private fun MonitorControls(
                     Button(onClick = onStart) { Text("Start monitoring") }
                 }
             }
+
+            HorizontalDivider()
+            ResetHourRow(resetHour = resetHour, onChange = onResetHourChange)
+        }
+    }
+}
+
+@Composable
+private fun ResetHourRow(resetHour: Int, onChange: (Int) -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            text = "Daily reset at %02d:00".format(resetHour),
+            style = MaterialTheme.typography.bodyMedium
+        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            TextButton(onClick = { onChange(resetHour - 1) }) { Text("−") }
+            TextButton(onClick = { onChange(resetHour + 1) }) { Text("+") }
         }
     }
 }
