@@ -1,7 +1,7 @@
 # Social Media Limiter — System Design & Progress
 
-> **Status:** M1 Phase 2 ✅ device-verified · **Phase 3 (reset logic) next**
-> **Last updated:** 2026-06-23
+> **Status:** M1 Phase 3 code done (CI-verified) · **pending device run, then Phase 4**
+> **Last updated:** 2026-06-24
 > **Platform:** Android-first (native Kotlin)
 > **Working name:** BuddyLimit _(placeholder, renamable)_
 > **Repo (private):** github.com/Blackrevan1/buddylimit · local root `/home/krish/Desktop/ideas`
@@ -238,11 +238,11 @@ Staged to the milestones — **no store is needed to start.**
 - [x] Persist usage counters (Room v2 `usage_records` behind `UsageRepository`; migrated, not destructive)
 - [x] ✔ **Verify:** CI green ✅ + **device run passed 2026-06-23** (tracked time climbed and matched real usage, ±poll interval)
 
-**Phase 3 · Reset logic**
-- [ ] Implement 4am day-window anchor
-- [ ] Zero counters on crossing reset
-- [ ] Configurable reset time setting
-- [ ] ✔ **Verify:** counters zero at the boundary (test with a near-term reset time)
+**Phase 3 · Reset logic** — _code done, CI-verified 2026-06-24 (commit 31b8d67)_
+- [x] Implement 4am day-window anchor (`DayWindow`, landed + unit-tested in Phase 2)
+- [x] Zero counters on crossing reset (read switches to a fresh per-`dayKey` bucket reactively at the boundary; prior windows kept, not destroyed)
+- [x] Configurable reset time setting (`SettingsRepository` via DataStore, default 4; "Daily reset at HH:00" stepper)
+- [ ] ✔ **Verify:** CI green ✅ — **pending device run** (counters present fresh at the boundary; test with a near-term reset time / device clock)
 
 **Phase 4 · Blocking**
 - [ ] Request overlay permission
@@ -384,3 +384,14 @@ Staged to the milestones — **no store is needed to start.**
   the Definition of Done. **Next: Phase 3 — reset logic** (configurable reset hour via
   DataStore, make the day-window reactive so counters present fresh at the boundary, zero
   on crossing the next reset).
+- **2026-06-24** — **M1 Phase 3 code complete & CI-verified** (build + unit tests + lint
+  green, 4m46s, commit 31b8d67). Added `SettingsRepository` (DataStore) holding `resetHour`
+  (default 4, clamped 0–23). The day-window is now **reactive**: `AppListViewModel` derives a
+  `currentDayKey` flow that re-emits at the next-reset boundary and whenever `resetHour`
+  changes, so the usage read switches to a fresh (empty) `dayKey` bucket at reset — counters
+  "zero" without destroying prior windows' rows (kept for future stats). `UsageMonitorService`
+  reads the configured `resetHour` for its flush bucket. UI gained a "Daily reset at HH:00"
+  stepper. The pure 4am-anchor math (incl. custom reset hour) was already unit-tested in
+  Phase 2. Added the `androidx.datastore:datastore-preferences` dependency. **Pending:** device
+  run to confirm counters present fresh at the boundary (set a near-term reset time / nudge the
+  device clock) before Phase 4 (blocking).
