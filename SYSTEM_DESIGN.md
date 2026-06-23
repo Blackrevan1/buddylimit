@@ -1,6 +1,6 @@
 # Social Media Limiter — System Design & Progress
 
-> **Status:** M1 Phase 1 ✅ device-verified · **Phase 2 (usage tracking) in progress**
+> **Status:** M1 Phase 2 code done (CI-verified) · **pending device run, then Phase 3**
 > **Last updated:** 2026-06-23
 > **Platform:** Android-first (native Kotlin)
 > **Working name:** BuddyLimit _(placeholder, renamable)_
@@ -230,13 +230,13 @@ Staged to the milestones — **no store is needed to start.**
 - [x] Persist budgets (Room, behind `AppRepository` interface)
 - [x] ✔ **Verify:** CI green ✅ + **device run passed 2026-06-23** (selections + budgets survived an app restart)
 
-**Phase 2 · Usage tracking**
-- [ ] Request + verify Usage Access permission
-- [ ] Foreground service skeleton + persistent notification
-- [ ] Poll `UsageStatsManager.queryEvents` for foreground app
-- [ ] Accumulate per-app usage for current day-window
-- [ ] Persist usage counters
-- [ ] ✔ **Verify:** on a device, tracked time for a real app matches reality (±poll interval)
+**Phase 2 · Usage tracking** — _code done, CI-verified 2026-06-23 (commit 171ea9e)_
+- [x] Request + verify Usage Access permission (`UsageAccess`: AppOps check + Settings intent; UI grant card)
+- [x] Foreground service skeleton + persistent notification (`UsageMonitorService`, `specialUse` FGS type)
+- [x] Poll `UsageStatsManager.queryEvents` for foreground app (~1s)
+- [x] Accumulate per-app usage for current day-window (`DayWindow` 4am anchor; Doze-gap cap)
+- [x] Persist usage counters (Room v2 `usage_records` behind `UsageRepository`; migrated, not destructive)
+- [ ] ✔ **Verify:** CI green ✅ — **pending device run** (tracked time for a real app matches reality, ±poll interval)
 
 **Phase 3 · Reset logic**
 - [ ] Implement 4am day-window anchor
@@ -364,3 +364,16 @@ Staged to the milestones — **no store is needed to start.**
   **Next: Phase 2 — usage tracking** (Usage Access permission → foreground service +
   persistent notification → poll `UsageStatsManager.queryEvents` → accumulate per-app
   usage for the day-window → persist counters).
+- **2026-06-23** — **M1 Phase 2 code complete & CI-verified** (build + unit tests + lint
+  green, 3m27s, commit 171ea9e). `UsageMonitorService` is a persistent `specialUse`
+  foreground service that polls `UsageStatsManager.queryEvents` ~1s, resolves the current
+  foreground app, accumulates elapsed time for monitored apps, and flushes to Room every
+  5s (per-tick elapsed capped to avoid Doze/screen-off overcount). `DayWindow` holds pure,
+  unit-tested 4am-anchored day-key/next-reset logic. Room bumped to v2 with a *migrated*
+  (non-destructive) `usage_records` table (composite PK pkg+dayKey) behind a new
+  `UsageRepository`; atomic increment via INSERT-OR-IGNORE + UPDATE (SQLite <3.24 safe).
+  `UsageAccess` checks the AppOps grant + opens Settings; the app list now has a monitoring
+  controls card (grant / start-stop) and shows live "used Xm Ys" per monitored app as the
+  verification surface. Manifest gained PACKAGE_USAGE_STATS, FOREGROUND_SERVICE(+SPECIAL_USE),
+  POST_NOTIFICATIONS + the service declaration. **Pending:** device run to confirm tracked
+  time matches reality (±poll) before Phase 3 (reset logic).
