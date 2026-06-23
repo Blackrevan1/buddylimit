@@ -22,9 +22,12 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
+    <!-- Phase 4 (blocking): draw the full-screen block overlay over a budget-exceeded app. -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+
     <!--
-        Later M1 phases will add: SYSTEM_ALERT_WINDOW (overlay, Phase 4),
-        RECEIVE_BOOT_COMPLETED + REQUEST_IGNORE_BATTERY_OPTIMIZATIONS (Phase 5),
+        Later M1 phases will add: RECEIVE_BOOT_COMPLETED +
+        REQUEST_IGNORE_BATTERY_OPTIMIZATIONS (Phase 5),
         QUERY_ALL_PACKAGES (if broader visibility is needed).
     -->
 

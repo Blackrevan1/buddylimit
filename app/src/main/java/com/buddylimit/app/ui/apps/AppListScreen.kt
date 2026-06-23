@@ -43,6 +43,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.buddylimit.app.monitor.OverlayPermission
 import com.buddylimit.app.monitor.UsageAccess
 import com.buddylimit.app.monitor.UsageMonitorService
 
@@ -58,11 +59,13 @@ fun AppListScreen(
     val context = LocalContext.current
 
     var usageGranted by remember { mutableStateOf(UsageAccess.isGranted(context)) }
+    var overlayGranted by remember { mutableStateOf(OverlayPermission.isGranted(context)) }
     var monitoring by remember { mutableStateOf(UsageMonitorService.isRunning) }
 
-    // Usage access is granted in system Settings (off-app), so re-check on return.
+    // The special permissions are granted in system Settings (off-app), so re-check on return.
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
         usageGranted = UsageAccess.isGranted(context)
+        overlayGranted = OverlayPermission.isGranted(context)
         monitoring = UsageMonitorService.isRunning
     }
 
@@ -109,9 +112,11 @@ fun AppListScreen(
                 item {
                     MonitorControls(
                         usageGranted = usageGranted,
+                        overlayGranted = overlayGranted,
                         monitoring = monitoring,
                         resetHour = state.resetHour,
                         onGrantUsageAccess = { context.startActivity(UsageAccess.settingsIntent()) },
+                        onGrantOverlay = { context.startActivity(OverlayPermission.settingsIntent(context)) },
                         onStart = { startMonitoring() },
                         onStop = {
                             UsageMonitorService.stop(context)
@@ -137,9 +142,11 @@ fun AppListScreen(
 @Composable
 private fun MonitorControls(
     usageGranted: Boolean,
+    overlayGranted: Boolean,
     monitoring: Boolean,
     resetHour: Int,
     onGrantUsageAccess: () -> Unit,
+    onGrantOverlay: () -> Unit,
     onStart: () -> Unit,
     onStop: () -> Unit,
     onResetHourChange: (Int) -> Unit
@@ -165,6 +172,14 @@ private fun MonitorControls(
                 } else {
                     Button(onClick = onStart) { Text("Start monitoring") }
                 }
+            }
+
+            if (!overlayGranted) {
+                Text(
+                    text = "Allow “Display over other apps” so blocked apps can be covered.",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Button(onClick = onGrantOverlay) { Text("Grant overlay permission") }
             }
 
             HorizontalDivider()

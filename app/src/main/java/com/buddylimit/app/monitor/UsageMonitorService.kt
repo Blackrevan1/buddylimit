@@ -17,6 +17,7 @@ import com.buddylimit.app.R
 import com.buddylimit.app.data.AppRepository
 import com.buddylimit.app.data.SettingsRepository
 import com.buddylimit.app.data.UsageRepository
+import com.buddylimit.app.data.local.MonitoredApp
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -30,10 +31,10 @@ import javax.inject.Inject
 
 /**
  * Persistent foreground service implementing the M1 monitoring loop (SYSTEM_DESIGN.md §4–5):
- * poll [UsageStatsManager] ~1s, find the current foreground app from its events, and
- * accumulate elapsed time for monitored apps into [UsageRepository], bucketed by day-window.
- *
- * Phase 2 only *tracks* usage; the block decision + overlay come in Phase 4.
+ * poll [UsageStatsManager] ~1s, find the current foreground app from its events, accumulate
+ * elapsed time for monitored apps into [UsageRepository] (bucketed by day-window), and — on
+ * re-entry into a monitored app that is over budget — throw the [BlockOverlay] and send the
+ * user Home (re-entry denial: an in-progress session is not interrupted).
  */
 @AndroidEntryPoint
 class UsageMonitorService : Service() {
@@ -44,13 +45,15 @@ class UsageMonitorService : Service() {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val zone: ZoneId = ZoneId.systemDefault()
+    private lateinit var overlay: BlockOverlay
 
-    @Volatile private var monitoredPackages: Set<String> = emptySet()
+    @Volatile private var monitored: Map<String, MonitoredApp> = emptyMap()
     @Volatile private var resetHour: Int = DayWindow.DEFAULT_RESET_HOUR
 
     override fun onCreate() {
         super.onCreate()
         isRunning = true
+        overlay = BlockOverlay(this)
         startForegroundNotification()
         observeMonitoredSet()
         startPolling()
@@ -62,6 +65,7 @@ class UsageMonitorService : Service() {
 
     override fun onDestroy() {
         isRunning = false
+        overlay.hide()
         scope.cancel()
         super.onDestroy()
     }
@@ -69,7 +73,7 @@ class UsageMonitorService : Service() {
     private fun observeMonitoredSet() {
         scope.launch {
             appRepository.observeMonitoredApps().collect { apps ->
-                monitoredPackages = apps.map { it.packageName }.toSet()
+                monitored = apps.associateBy { it.packageName }
             }
         }
         scope.launch {
@@ -86,6 +90,7 @@ class UsageMonitorService : Service() {
             var currentPkg: String? = latestForegroundBetween(
                 usm, lastQueryWall - SEED_LOOKBACK_MS, lastQueryWall
             )
+            var lastForegroundPkg: String? = currentPkg
             val pendingMs = HashMap<String, Long>()
 
             while (isActive) {
@@ -101,8 +106,21 @@ class UsageMonitorService : Service() {
                 val pkg = currentPkg
                 // Cap elapsed: a long gap means the process was suspended (Doze / screen off),
                 // not real foreground time, so we don't count it.
-                if (pkg != null && pkg in monitoredPackages && elapsed in 1..MAX_ELAPSED_MS) {
+                if (pkg != null && monitored.containsKey(pkg) && elapsed in 1..MAX_ELAPSED_MS) {
                     pendingMs[pkg] = (pendingMs[pkg] ?: 0L) + elapsed
+                }
+
+                // Re-entry denial: only act on a foreground-ENTER into a monitored app, so an
+                // in-progress session is never interrupted mid-use.
+                if (pkg != null && pkg != lastForegroundPkg && monitored.containsKey(pkg) &&
+                    isOverBudget(pkg, pendingMs, nowWall)
+                ) {
+                    block(pkg, nowWall)
+                }
+                lastForegroundPkg = pkg
+
+                if (overlay.isShowing()) {
+                    overlay.updateCountdown(DayWindow.nextReset(nowWall, zone, resetHour))
                 }
 
                 sinceFlushMs += elapsed
@@ -112,6 +130,36 @@ class UsageMonitorService : Service() {
                 }
             }
         }
+    }
+
+    /** Used (persisted + not-yet-flushed) >= the app's budget for the current window. */
+    private suspend fun isOverBudget(pkg: String, pendingMs: Map<String, Long>, nowWall: Long): Boolean {
+        val budgetMinutes = monitored[pkg]?.dailyBudgetMinutes ?: return false
+        val dayKey = DayWindow.dayKey(nowWall, zone, resetHour)
+        val persistedSeconds = usageRepository.getUsedSeconds(pkg, dayKey)
+        val pendingSeconds = (pendingMs[pkg] ?: 0L) / 1000L
+        return persistedSeconds + pendingSeconds >= budgetMinutes.toLong() * 60L
+    }
+
+    /** Cover the over-budget app with the block overlay and bounce the user Home. */
+    private fun block(pkg: String, nowWall: Long) {
+        if (!OverlayPermission.isGranted(this)) return
+        val label = monitored[pkg]?.label ?: pkg
+        sendHome()
+        overlay.show(
+            appLabel = label,
+            packageName = pkg,
+            nextResetMillis = DayWindow.nextReset(nowWall, zone, resetHour),
+            onDismiss = ::sendHome
+        )
+    }
+
+    private fun sendHome() {
+        val home = Intent(Intent.ACTION_MAIN).apply {
+            addCategory(Intent.CATEGORY_HOME)
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+        }
+        runCatching { startActivity(home) }
     }
 
     /** Persist whole accumulated seconds, keeping sub-second remainders pending. */
