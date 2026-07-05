@@ -1,4 +1,4 @@
-# BuddyLimit _(working name)_
+# BuddyLimit 
 
 Android app that enforces **daily per-app social-media time limits** that can only
 be loosened or extended with a **buddy's approval**. Built to beat social media
